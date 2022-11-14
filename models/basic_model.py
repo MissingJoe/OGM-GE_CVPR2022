@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .backbone import resnet18
-from .fusion_modules import SumFusion, ConcatFusion, FiLM, GatedFusion
+from .backbone_new import resnet34
+from .fusion_modules import *
 
 
 class AVClassifier(nn.Module):
@@ -18,6 +19,8 @@ class AVClassifier(nn.Module):
             n_classes = 6
         elif args.dataset == 'AVE':
             n_classes = 28
+        elif args.dataset == 'tumor':
+            n_classes = 5
         else:
             raise NotImplementedError('Incorrect dataset name {}'.format(args.dataset))
 
@@ -29,6 +32,8 @@ class AVClassifier(nn.Module):
             self.fusion_module = FiLM(output_dim=n_classes, x_film=True)
         elif fusion == 'gated':
             self.fusion_module = GatedFusion(output_dim=n_classes, x_gate=True)
+        elif fusion == 'ds':
+            self.fusion_module = DSFusion(output_dim=n_classes, x_gate=True)
         else:
             raise NotImplementedError('Incorrect fusion method: {}!'.format(fusion))
 
@@ -54,3 +59,25 @@ class AVClassifier(nn.Module):
         a, v, out = self.fusion_module(a, v)
 
         return a, v, out
+
+
+class AVClassifierTumor(nn.Module):
+    def __init__(self, args):
+        super(AVClassifierTumor, self).__init__()
+        self.fusion = args.fusion_method
+        n_classes = 5
+        self.fusion_module = DSFusion(output_dim=n_classes)
+
+        self.audio_net = resnet34(modality='audio')
+        self.visual_net = resnet34(modality='visual')
+
+    def forward(self, audio, visual):
+
+        a = self.audio_net(audio)
+        v = self.visual_net(visual)
+        a = F.adaptive_avg_pool2d(a, 1)
+        v = F.adaptive_avg_pool2d(v, 1)
+        a = torch.flatten(a, 1)
+        v = torch.flatten(v, 1)
+        alpha, out_x, out_y = self.fusion_module(a, v)
+        return a, v, alpha, out_x, out_y

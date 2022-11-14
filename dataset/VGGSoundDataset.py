@@ -26,7 +26,7 @@ class VGGSound(Dataset):
         train_class = []
         test_class  = []
 
-        with open('/home/hudi/OGM-GE_CVPR2022/data/VGGSound/vggsound.csv') as f:
+        with open('/home/missingjoe/OGM-GE_CVPR2022/data/VGGSound/vggsound.csv') as f:
             csv_reader = csv.reader(f)
 
             for item in csv_reader:
@@ -110,5 +110,4 @@ class VGGSound(Dataset):
 
         # label
         label = self.label[idx]
-
         return spectrogram, images, label

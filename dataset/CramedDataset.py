@@ -93,5 +93,8 @@ class CramedDataset(Dataset):
 
         # label
         label = self.label[idx]
-
+        print(label.shape)
+        print(spectrogram.shape)
+        print(images.shape)
+        exit(-2222)
         return spectrogram, images, label
